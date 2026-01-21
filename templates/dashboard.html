@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Food Waste Dashboard</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fef9f0, #fff7e6);
+        }
+
+        .navbar {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .navbar-brand {
+            color: #2f5d3a !important;
+        }
+
+        .metric-card {
+            border-radius: 18px;
+            border: 1px solid rgba(200, 160, 90, 0.35);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            padding: 18px;
+        }
+
+        .metric-label {
+            font-weight: 600;
+            color: #6b6b6b;
+        }
+
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f3f2b;
+        }
+
+        .chart-card {
+            border-radius: 18px;
+            border: 1px solid rgba(200, 160, 90, 0.35);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+        }
+
+        .dashboard-title {
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #1f3f2b;
+        }
+
+        /* NEW: Recommendation Card */
+        .recommendation-card {
+            border-radius: 18px;
+            border: 1px solid rgba(200, 160, 90, 0.35);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
+            padding: 20px;
+            background: #fff;
+        }
+
+        .recommendation-title {
+            font-weight: 700;
+            color: #1f3f2b;
+        }
+
+        .recommendation-item {
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(200, 160, 90, 0.25);
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg bg-white shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{{ url_for('dashboard') }}">
+            Smart Waste Predictor
+        </a>
+
+        <div class="collapse navbar-collapse">
+            <ul class="navbar-nav ms-auto align-items-center">
+
+                {% if current_user.role == "admin" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('admin_dashboard') }}">
+                            Ingredients
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('manage_staff') }}">
+                            Manage Staff
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% if current_user.role == "staff" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('dashboard') }}">
+                            Dashboard
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('add_data_page') }}">
+                            Add Usage
+                        </a>
+                    </li>
+                {% endif %}
+
+                <li class="nav-item">
+                    <a class="nav-link text-danger fw-semibold" href="{{ url_for('logout') }}">
+                        Logout
+                    </a>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="dashboard-title">🥗 Smart Food Waste Dashboard</h1>
+
+        {% if current_user.role == "staff" %}
+            <a href="{{ url_for('add_data_page') }}" class="btn btn-primary">
+                ➕ Add Ingredient Usage
+            </a>
+        {% endif %}
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="metric-label">Total Ingredients Used (kg)</div>
+                <div class="metric-value" id="totalUsed">0</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="metric-label">Total Food Wasted (kg)</div>
+                <div class="metric-value" id="totalWasted">0</div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card metric-card">
+                <div class="metric-label">Average Waste %</div>
+                <div class="metric-value" id="avgWaste">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts + Recommendations -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <h6 class="mb-3">Daily Usage vs Waste</h6>
+                <canvas id="dailyWasteChart"></canvas>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card chart-card">
+                <h6 class="mb-3">Ingredient Waste Percentage</h6>
+                <canvas id="ingredientWasteChart"></canvas>
+            </div>
+        </div>
+
+        <!-- NEW: Smart Recommendations -->
+        <div class="col-md-12">
+            <div class="recommendation-card">
+                <h5 class="recommendation-title mb-3">✨ Smart Recommendations (Weekly Trends)</h5>
+                <div id="recommendationsContainer">
+                    <!-- Recommendations will load here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='charts.js') }}"></script>
+</body>
+</html>

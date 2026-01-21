@@ -102,7 +102,7 @@ smart_food_waste_predictor/
 5. Open your browser and visit:
 
    ```
-   http://127.0.0.1:5000
+   http://127.0.0.1:5000/login
    ```
 
 ---
@@ -139,7 +139,7 @@ A short demo video is included in the LinkedIn post showcasing:
 
 ## Author
 
-Developed by **Angela Revenson**
+Developed by **Angela Raveendraraj**
 
 ---
 
